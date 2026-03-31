@@ -3,6 +3,7 @@ import openmeteo_requests
 import requests_cache
 from retry_requests import retry
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 # Part A
 ped = pd.read_csv('data/akl_ped-2024.csv')
@@ -145,8 +146,56 @@ df["condition"] = df["rain_sum"].apply(lambda x: "wet" if x > 0 else "dry")
 
 #grouped by weekday/weekend and rain/no rain
 count_by_weekend_and_condition = df.groupby(["is_weekend", "condition"])["count"].mean()
-
+print(count_by_weekend_and_condition)
 #Part D
 
 #weekday and weekend hourly line chart
+fig, ax = plt.subplots(figsize=(12, 8))
+ax.set_xticks(range(0, 24, 2))
+ax.grid(True, alpha=0.3)
+ax.plot(weekday_hourly.index, weekday_hourly.values, color=mcolors.CSS4_COLORS["seagreen"], marker="o", label="Weekday")
+ax.plot(weekend_hourly.index, weekend_hourly.values, color=mcolors.CSS4_COLORS["crimson"], marker="o", label = "Weekend")
+ax.set_xlabel('Hours', fontsize=16)
+ax.set_ylabel('Mean pedestrian count', fontsize=16)
+ax.set_title('Mean Pedestrian Count by Hour (Auckland CBD)', fontsize=18)
+ax.tick_params(axis="both", labelsize=14)
+ax.legend(fontsize=16)
 
+#dry/wet weekday/weekend bar chart
+categories = ["Dry Weekday", "Wet Weekday", "Dry Weekend", "Wet Weekend"]
+
+values = [
+    count_by_weekend_and_condition[(False, "dry")],
+    count_by_weekend_and_condition[(False, "wet")],
+    count_by_weekend_and_condition[(True, "dry")],
+    count_by_weekend_and_condition[(True, "wet")]
+]
+colors = ["mediumseagreen", "seagreen", "lightcoral", "crimson"]
+fig, ax = plt.subplots(figsize=(10, 6))
+bars = ax.bar(categories, values, color=colors, alpha=0.7, edgecolor='black')
+for bar in bars:
+    height = bar.get_height()
+    ax.text(
+        bar.get_x() + bar.get_width() / 2,
+        height + 2,
+        f"{height:.0f}",
+        ha="center",
+        va="bottom",
+        fontsize=14
+    )
+ax.set_xlabel('Day type', fontsize=16)
+ax.set_ylabel('Pedestrian count', fontsize=16)
+ax.set_title('Average Pedestrian Count by Day Type and Rain Condition', fontsize=18)
+ax.grid(axis='y', alpha=0.3)
+ax.tick_params(axis="both", labelsize=14)
+ax.set_ylim(0, 350)
+
+
+
+
+
+
+
+
+plt.tight_layout()
+plt.show()
