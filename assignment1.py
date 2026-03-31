@@ -2,6 +2,7 @@ import pandas as pd
 import openmeteo_requests
 import requests_cache
 from retry_requests import retry
+import matplotlib.pyplot as plt
 
 # Part A
 ped = pd.read_csv('data/akl_ped-2024.csv')
@@ -133,12 +134,19 @@ sensors_df = pd.DataFrame.from_dict(sensors_count_dict, orient="index")
 sensors_df = sensors_df.reset_index()
 sensors_df = sensors_df.rename(columns={"index": "location"})
 
-print(sensors_df)
-
 #difference col: weekends mean - weekdays mean (positive = busier on weekends)
 
 sensors_df["difference"] = sensors_df["weekends_mean"] - sensors_df["weekdays_mean"]
 
 weekend_heavy = sensors_df.sort_values("difference", ascending=False)
 weekday_heavy = sensors_df.sort_values("difference", ascending=True)
+
+df["condition"] = df["rain_sum"].apply(lambda x: "wet" if x > 0 else "dry")
+
+#grouped by weekday/weekend and rain/no rain
+count_by_weekend_and_condition = df.groupby(["is_weekend", "condition"])["count"].mean()
+
+#Part D
+
+#weekday and weekend hourly line chart
 
