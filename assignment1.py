@@ -134,3 +134,11 @@ sensors_df = sensors_df.reset_index()
 sensors_df = sensors_df.rename(columns={"index": "location"})
 
 print(sensors_df)
+
+#difference col: weekends mean - weekdays mean (positive = busier on weekends)
+
+sensors_df["difference"] = sensors_df["weekends_mean"] - sensors_df["weekdays_mean"]
+
+weekend_heavy = sensors_df.sort_values("difference", ascending=False)
+weekday_heavy = sensors_df.sort_values("difference", ascending=True)
+
