@@ -4,6 +4,7 @@ import requests_cache
 from retry_requests import retry
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.patches import Patch
 
 # Part A
 ped = pd.read_csv('data/akl_ped-2024.csv')
@@ -190,12 +191,81 @@ ax.grid(axis='y', alpha=0.3)
 ax.tick_params(axis="both", labelsize=14)
 ax.set_ylim(0, 350)
 
+#sensor difference bar chart
+#difference > 0 → more weekend-heavy
+#difference < 0 → more weekday-heavy
+sorted_sensors = sensors_df.sort_values(by="difference")
 
+#selected 5 top and 5 bottom sensors
 
+top5 = sorted_sensors.iloc[:5]
+bottom5 = sorted_sensors.iloc[-5:]
 
+selected_sensors = pd.concat([top5, bottom5])
+locations = selected_sensors["location"]
+differences = selected_sensors["difference"]
+colors = ["seagreen" if x < 0 else "crimson" for x in differences]
 
+fig, ax = plt.subplots(figsize=(12, 9))
 
+bars = ax.barh(locations, differences, color=colors, alpha=0.8, edgecolor="black")
 
+ax.axvline(0, color="black", linewidth=1)
+
+for bar in bars:
+    width = bar.get_width()
+    y = bar.get_y() + bar.get_height() / 2
+
+    if width < 0:
+        ax.text(width - 3, y, f"{width:.0f}", ha="right", va="center", fontsize=11)
+    else:
+        ax.text(width + 3, y, f"{width:.0f}", ha="left", va="center", fontsize=11)
+
+ax.set_xlabel("Weekend Mean - Weekday Mean", fontsize=14)
+ax.set_ylabel("Sensor Location", fontsize=14)
+ax.set_title("Difference in Average Weekend and Weekday Pedestrian Count by Sensor", fontsize=16)
+ax.tick_params(axis="both", labelsize=11)
+ax.grid(axis="x", alpha=0.3)
+legend_handles = [
+    Patch(facecolor="seagreen", edgecolor="black", label="Higher on weekdays"),
+    Patch(facecolor="crimson", edgecolor="black", label="Higher on weekends")
+]
+
+ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
+ax.set_xlim(-190, 30)
+
+#all sensors
+locations = sorted_sensors["location"]
+differences = sorted_sensors["difference"]
+colors = ["seagreen" if x < 0 else "crimson" for x in differences]
+
+fig, ax = plt.subplots(figsize=(12, 9))
+
+bars = ax.barh(locations, differences, color=colors, alpha=0.8, edgecolor="black")
+
+ax.axvline(0, color="black", linewidth=1)
+
+for bar in bars:
+    width = bar.get_width()
+    y = bar.get_y() + bar.get_height() / 2
+
+    if width < 0:
+        ax.text(width - 3, y, f"{width:.0f}", ha="right", va="center", fontsize=11)
+    else:
+        ax.text(width + 3, y, f"{width:.0f}", ha="left", va="center", fontsize=11)
+
+ax.set_xlabel("Weekend Mean - Weekday Mean", fontsize=14)
+ax.set_ylabel("Sensor Location", fontsize=14)
+ax.set_title("Difference in Average Weekend and Weekday Pedestrian Count by Sensor (Full)", fontsize=16)
+ax.tick_params(axis="both", labelsize=11)
+ax.grid(axis="x", alpha=0.3)
+legend_handles = [
+    Patch(facecolor="seagreen", edgecolor="black", label="Higher on weekdays"),
+    Patch(facecolor="crimson", edgecolor="black", label="Higher on weekends")
+]
+
+ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
+ax.set_xlim(-190, 30)
 
 plt.tight_layout()
 plt.show()
