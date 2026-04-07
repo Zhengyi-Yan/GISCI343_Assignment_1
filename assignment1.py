@@ -318,3 +318,20 @@ m = gdf.explore(
 )
 
 m.save("sensor_map.html")
+
+mean_count_per_hour = weekdays.groupby(["location", "hour"])["count"].mean()
+
+sensor_hour_matrix = mean_count_per_hour.unstack()
+
+def normalize(data):
+    total = data.sum()
+    if total == 0:
+        return data
+    return data / total
+
+def normalize_sensor_hour_matrix(matrix):
+    #Normalize each sensor's hourly profile so each row sums to 1
+    normalized_matrix = matrix.apply(normalize, axis=1)
+    return normalized_matrix
+
+sensor_hour_normalized = normalize_sensor_hour_matrix(sensor_hour_matrix)
