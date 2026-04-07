@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.patches import Patch
 import geopandas as gpd
+from sklearn.cluster import KMeans
 
 # Part A
 ped = pd.read_csv('data/akl_ped-2024.csv')
@@ -335,3 +336,88 @@ def normalize_sensor_hour_matrix(matrix):
     return normalized_matrix
 
 sensor_hour_normalized = normalize_sensor_hour_matrix(sensor_hour_matrix)
+
+kmeans = KMeans(n_clusters=3, random_state=42)
+cluster_labels = kmeans.fit_predict(sensor_hour_normalized)
+
+cluster_df = pd.DataFrame({
+    "location": sensor_hour_normalized.index,
+    "cluster": cluster_labels
+})
+
+cluster_matrix = sensor_hour_normalized.copy()
+cluster_matrix = cluster_matrix.reset_index()
+cluster_matrix = cluster_matrix.rename(columns={"index": "location"})
+
+cluster_matrix = cluster_matrix.merge(cluster_df, on="location", how="left")
+cluster_profiles = cluster_matrix.groupby("cluster").mean(numeric_only=True)
+
+fig, ax = plt.subplots(figsize=(12, 8))
+
+for cluster in cluster_profiles.index:
+    ax.plot(
+        cluster_profiles.columns,
+        cluster_profiles.loc[cluster],
+        marker="o",
+        label=f"Cluster {cluster}"
+    )
+
+ax.set_xticks(range(0, 24, 2))
+ax.set_xlabel("Hour of Day", fontsize=14)
+ax.set_ylabel("Normalized Share of Weekday Activity", fontsize=14)
+ax.set_title("Average Weekday Hourly Profiles by Sensor Cluster", fontsize=16)
+ax.tick_params(axis="both", labelsize=12)
+ax.grid(True, alpha=0.3)
+ax.legend(fontsize=12)
+
+#Cluster 1 appears most consistent with a commuter-oriented pattern
+#Cluster 0 appears more midday-focused, which may reflect commercial or central daytime activity
+#Cluster 2 shows a broader pattern extending further into the evening
+
+#cluster map
+
+gdf_cluster = gdf.merge(cluster_df, on="location", how="left")
+gdf_cluster["cluster_name"] = gdf_cluster["cluster"].map({
+    0: "Midday-focused",
+    1: "Commuter-like",
+    2: "Broader all-day"
+})
+
+gdf_cluster["weekdays_mean_rounded"] = gdf_cluster["weekdays_mean"].round(0)
+gdf_cluster["weekends_mean_rounded"] = gdf_cluster["weekends_mean"].round(0)
+gdf_cluster["difference_rounded"] = gdf_cluster["difference"].round(0)
+
+cluster_map = gdf_cluster.explore(
+    column="cluster_name",
+    categorical=True,
+    cmap=["royalblue", "orange", "mediumseagreen"],
+    categories=["Midday-focused", "Commuter-like", "Broader all-day"],
+    tooltip=[
+        "location",
+        "cluster_name",
+        "weekdays_mean_rounded",
+        "weekends_mean_rounded",
+        "difference_rounded"
+    ],
+    tooltip_kwds={
+        "aliases": [
+            "Sensor",
+            "Cluster Type",
+            "Weekday Mean",
+            "Weekend Mean",
+            "Weekend - Weekday"
+        ]
+    },
+    tiles="CartoDB positron",
+    marker_kwds={"radius": 12, "fillOpacity": 1},
+    legend=True,
+    legend_kwds={"caption": "Weekday Sensor Pattern Type"},
+    style_kwds={"weight": 2, "color": "black", "opacity": 1},
+)
+
+cluster_map.save("sensor_cluster_map.html")
+
+plt.tight_layout()
+plt.show()
+
+
