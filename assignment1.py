@@ -5,6 +5,7 @@ from retry_requests import retry
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.patches import Patch
+import geopandas as gpd
 
 # Part A
 ped = pd.read_csv('data/akl_ped-2024.csv')
@@ -267,5 +268,53 @@ legend_handles = [
 ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
 
-plt.tight_layout()
-plt.show()
+#plt.tight_layout()
+#plt.show()
+
+
+
+#map plotting
+
+ped_geodata = pd.read_csv('data/akl_ped-Geodata.csv')
+ped_geodata = ped_geodata.dropna(subset=["Latitude", "Longitude"]).copy()
+
+sensors_df_geo = sensors_df.merge(ped_geodata, left_on="location", right_on="Address", how="inner")
+
+gdf = gpd.GeoDataFrame(
+    sensors_df_geo,
+    geometry=gpd.points_from_xy(sensors_df_geo["Longitude"], sensors_df_geo["Latitude"]),
+    crs="EPSG:4326"
+)
+
+#interactive map
+
+gdf["pattern"] = gdf["difference"].apply(
+    lambda x: "Higher on weekdays" if x < 0 else "Higher on weekends"
+)
+gdf["weekdays_mean_rounded"] = gdf["weekdays_mean"].round(0)
+gdf["weekends_mean_rounded"] = gdf["weekends_mean"].round(0)
+gdf["difference_rounded"] = gdf["difference"].round(0)
+
+
+m = gdf.explore(
+    column="pattern",
+    categorical=True,
+    cmap=["seagreen", "crimson"],
+    categories=["Higher on weekdays", "Higher on weekends"],
+    tooltip=[
+        "location",
+        "weekdays_mean_rounded",
+        "weekends_mean_rounded",
+        "difference_rounded"
+    ],
+    tooltip_kwds={
+        "aliases": ["Sensor", "Weekday Mean", "Weekend Mean", "Weekend - Weekday"]
+    },
+    tiles="CartoDB positron",
+    marker_kwds={"radius": 12, "fillOpacity": 0.9},
+    legend=True,
+    legend_kwds={"caption": "Pedestrian Activity Pattern"},
+    style_kwds={"weight": 2, "color": "black", "opacity": 1},
+)
+
+m.save("sensor_map.html")
