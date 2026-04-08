@@ -1,0 +1,292 @@
+---
+title: "Your Title Here"
+author: "Your Name"
+format:
+  html:
+    toc: true
+    code-fold: false
+    embed-resources: true
+  pdf:
+    toc: false
+    number-sections: false
+    geometry: margin=2.5cm
+execute:
+  echo: true
+  warning: false
+  message: false
+jupyter: python3
+---
+
+# Introduction
+
+[Write your opening paragraph here. Introduce the topic in an engaging way.]
+
+[State your research question clearly here.]
+
+[Briefly explain why this question matters in the Auckland CBD context.]
+
+# Data and Study Area
+
+[Describe the pedestrian dataset here.]
+
+[State the source of the data.]
+
+[Briefly describe the study area and what the sensor network represents.]
+
+[Briefly mention the extra datasets you use, such as weather and geodata.]
+
+## Part A: Data Import and Cleaning
+
+### Loading the pedestrian data
+
+[Explain how you loaded the data and what file you used.]
+
+```{python}
+# Insert code for loading the pedestrian data
+```
+
+### Inspecting and cleaning the data
+
+[Explain the issues you found, such as note rows, typos, missing values, or formatting problems.]
+```{python}
+# Insert code for cleaning the data
+```
+
+Creating time variables
+
+[Explain the time-related variables you created and why they are useful.]
+```{python}
+# Insert code for creating month, day_of_week, hour, is_weekend, etc.
+```
+
+Reshaping the data
+
+[Explain why you reshaped from wide to long format.]
+
+```{python}
+# Insert code for reshaping to long format
+```
+
+Summary of the cleaned data
+
+[Write a short summary describing the cleaned dataset.]
+
+```{python}
+# Optional: head, shape, summary statistics
+```
+
+## Part B: Functions
+
+[Introduce this section by explaining that you wrote reusable functions to support the analysis.]
+
+### Function 1
+
+[Briefly explain what the function does and why it is useful.]
+```{python}
+# Insert Function 1
+```
+
+### Function 2
+
+[Briefly explain what the function does and why it is useful.]
+```{python}
+# Insert Function 2
+```
+
+### Function 3
+
+[Briefly explain what the function does and why it is useful.]
+```{python}
+# Insert Function 3
+```
+
+Part C: API Integration
+
+[Introduce the API you used and explain why it adds something useful to the project.]
+
+Requesting weather data
+
+[Explain what variables you requested and why.]
+
+```{python}
+# Insert API request code
+```
+
+Processing the API response
+
+[Explain how you turned the response into a usable DataFrame.]
+
+```{python}
+# Insert code for processing the API data
+```
+
+Merging the API data with pedestrian counts
+
+[Explain how you merged weather with the pedestrian data and what new comparisons this allowed.]
+
+```{python}
+# Insert merge code
+```
+
+### Analysis
+
+[Use this section to move from prepared data to actual findings.]
+
+#### Overall weekday and weekend comparison
+
+[Write a short paragraph introducing this comparison.]
+
+```{python}
+# Insert code for weekday/weekend mean comparison
+```
+
+[Write a short interpretation.]
+
+#### Hourly weekday and weekend comparison
+
+[Introduce the hourly comparison and explain why hourly rhythm matters.]
+
+```{python}
+# Insert code for hourly summaries
+```
+
+[Write a short interpretation.]
+
+#### Sensor-level comparison
+
+[Explain why comparing sensors matters spatially.]
+```{python}
+# Insert code for sensor-level summaries
+```
+
+[Write a short interpretation.]
+
+#### Weather comparison
+
+[Explain why comparing wet and dry conditions matters.]
+
+```{python}
+# Insert code for weather summaries
+```
+
+[Write a short interpretation.]
+
+#### Optional extra analysis: clustering
+
+[Introduce the clustering analysis and explain why you added it.]
+
+```{python}
+# Insert code for weekday hourly clustering
+```
+
+[Write a short interpretation of what the clusters suggest.]
+
+## Part D: Visualisations
+
+[Introduce the visualisations section and explain that each figure reveals a different pattern.]
+
+### Figure 1: Weekday vs weekend hourly pattern
+
+[Briefly introduce the first figure.]
+
+```{python}
+# Insert code for the weekday/weekend hourly line chart
+```
+
+[Write 2–4 sentences interpreting the figure.]
+
+### Figure 2: Weather effect on foot traffic
+
+[Briefly introduce the second figure.]
+
+```{python}
+# Insert code for the wet/dry weekday/weekend bar chart
+```
+
+[Write 2–4 sentences interpreting the figure.]
+
+### Figure 3: Sensor differences across the CBD
+
+[Briefly introduce the third figure.]
+
+```{python}
+# Insert code for the top/bottom sensor difference bar chart
+
+```
+
+[Write 2–4 sentences interpreting the figure.]
+
+### Figure 4: Geospatial visualisation
+
+[Explain what the map shows and why it is useful.]
+
+[If you are using a screenshot in the QMD/PDF, insert it here.]
+
+[If you want to keep the interactive map creation code in the QMD, put it below.]
+
+```{python}
+# Optional: insert code that creates and saves the interactive map
+```
+
+[Write 2–4 sentences interpreting the map.]
+
+### Optional Figure 5: Cluster profiles
+
+[Introduce the cluster profile chart.]
+
+```{python}
+# Insert code for the cluster profile line chart
+```
+
+[Write a short interpretation.]
+
+### Optional Figure 6: Cluster map
+
+[Introduce the cluster map if you decide to keep it.]
+
+```{python}
+# Optional: insert code that creates and saves the cluster map
+```
+
+## Key Findings
+
+[Summarise the main findings in plain language.]
+
+[You can structure this as a few short paragraphs or a concise list in prose.]
+
+## Limitations
+
+[Write about the main limitations of the project.]
+
+[Possible ideas:
+	•	one year of data only
+	•	weather measured at one city-level location
+	•	sensor points do not represent true catchment areas
+	•	clustering is exploratory
+	•	interactive maps simplified to screenshots in the PDF/blog
+]
+
+## Conclusion
+
+[Write a short concluding paragraph that directly answers your research question.]
+
+## Reproducibility
+
+[State where the reader can find the project files.]
+
+GitHub repository: [Paste your link here]
+
+[Explain what is included in the repository:
+	•	QMD file
+	•	data files
+	•	environment information
+	•	interactive HTML maps
+]
+
+## Data Sources / References
+
+[Heart of the City pedestrian counts]
+
+[Open-Meteo API]
+
+[Any other sources you want to cite]
