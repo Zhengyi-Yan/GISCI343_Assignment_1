@@ -32,8 +32,6 @@ ped_long = pd.melt(
     var_name="location",
     value_name="count"
 )
-print(ped_long.head())
-ped_long.info()
 # After reshaping the 2024 dataset to long format, 
 # I inspected the dataframe with info() and found no null values, so no row deletion or imputation was required.
 
@@ -59,10 +57,6 @@ responses = openmeteo.weather_api(url, params = params)
 
 # Process first location. Add a for-loop for multiple locations or weather models
 response = responses[0]
-print(f"Coordinates: {response.Latitude()}°N {response.Longitude()}°E")
-print(f"Elevation: {response.Elevation()} m asl")
-print(f"Timezone: {response.Timezone()}{response.TimezoneAbbreviation()}")
-print(f"Timezone difference to GMT+0: {response.UtcOffsetSeconds()}s")
 
 # Process daily data. The order of variables needs to be the same as requested.
 daily = response.Daily()
@@ -121,6 +115,7 @@ sensors = [
 ]
 
 def get_mean_weekday_weekend_count(df, sensor):
+    """Return mean weekday and weekend pedestrian counts for a given sensor."""
     weekdays = df[df["is_weekend"] == False]
     weekdays_mean = weekdays[weekdays["location"] == sensor]["count"].mean()
 
@@ -149,7 +144,6 @@ df["condition"] = df["rain_sum"].apply(lambda x: "wet" if x > 0 else "dry")
 
 #grouped by weekday/weekend and rain/no rain
 count_by_weekend_and_condition = df.groupby(["is_weekend", "condition"])["count"].mean()
-print(count_by_weekend_and_condition)
 #Part D
 
 #weekday and weekend hourly line chart
@@ -269,9 +263,6 @@ legend_handles = [
 ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
 
-#plt.tight_layout()
-#plt.show()
-
 
 
 #map plotting
@@ -325,13 +316,14 @@ mean_count_per_hour = weekdays.groupby(["location", "hour"])["count"].mean()
 sensor_hour_matrix = mean_count_per_hour.unstack()
 
 def normalize(data):
+    """Normalize a sequence of hourly values so they sum to 1."""
     total = data.sum()
     if total == 0:
         return data
     return data / total
 
 def normalize_sensor_hour_matrix(matrix):
-    #Normalize each sensor's hourly profile so each row sums to 1
+    """Normalize each sensor's hourly profile so each row sums to 1."""
     normalized_matrix = matrix.apply(normalize, axis=1)
     return normalized_matrix
 
@@ -378,9 +370,9 @@ ax.legend(fontsize=12)
 
 gdf_cluster = gdf.merge(cluster_df, on="location", how="left")
 gdf_cluster["cluster_name"] = gdf_cluster["cluster"].map({
-    0: "Midday-focused",
-    1: "Commuter-like",
-    2: "Broader all-day"
+    0: "Cluster 1",
+    1: "Cluster 2",
+    2: "Cluster 3"
 })
 
 gdf_cluster["weekdays_mean_rounded"] = gdf_cluster["weekdays_mean"].round(0)
