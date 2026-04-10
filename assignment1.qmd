@@ -17,29 +17,23 @@ execute:
 jupyter: python3
 ---
 
-# Introduction
+# Two Cities in One: How Auckland CBD Changes Between Weekdays and Weekends
 
-[Write your opening paragraph here. Introduce the topic in an engaging way.]
+Auckland CBD does not feel like the same place every day of the week. On a weekday, the city centre is shaped by office workers, lunch breaks, commuting, and quick errands between appointments. On a weekend, some of that movement fades, and a different city appears: less tied to work, less uniform across space, and a little less predictable.
 
-[State your research question clearly here.]
+I wanted to see how different those two versions of the CBD really are.
 
-[Briefly explain why this question matters in the Auckland CBD context.]
+Using pedestrian sensor data from across central Auckland, I explored one main question: 
 
-# Data and Study Area
+#### How does pedestrian activity differ between weekdays and weekends across Auckland CBD, and how do those differences vary by hour, weather, and location?
 
-[Describe the pedestrian dataset here.]
+To answer it, I combined hourly footfall data from Auckland CBD sensors with daily weather data from the Open-Meteo API, then used charts and maps to compare the city’s weekly rhythm.
 
-[State the source of the data.]
+## Counting footsteps across the city
 
-[Briefly describe the study area and what the sensor network represents.]
-
-[Briefly mention the extra datasets you use, such as weather and geodata.]
-
-## Part A: Data Import and Cleaning
+The main dataset comes from Heart of the City Auckland, the city centre business association, which operates a network of pedestrian sensors across the CBD. Each sensor records how many people walk past in each hour, making it possible to compare both when foot traffic happens and where it is strongest.
 
 ### Loading the pedestrian data
-
-[Explain how you loaded the data and what file you used.]
 
 ```{python}
 import pandas as pd
@@ -57,7 +51,10 @@ ped = pd.read_csv('data/akl_ped-2024.csv')
 
 ### Inspecting and cleaning the data
 
-[Explain the issues you found, such as note rows, typos, missing values, or formatting problems.]
+Like most real-world datasets, it needed cleaning before it could say anything useful. I removed note rows that were not actual observations, fixed an inconsistent sensor name, converted the date column properly, and created time variables such as month, hour, and day of week. I also reshaped the data from a wide format into a long format so that each row represented a single sensor reading at a single time.
+
+That restructuring mattered. It made it much easier to compare movement patterns by sensor, by hour, and by weekday versus weekend.
+
 ```{python}
 # Fix the typo in one sensor name
 ped.rename(columns={"59 High Stret": "59 High Street"}, inplace=True)
@@ -67,9 +64,8 @@ mask = ped['Date'].str.match(r'^\d{4}', na=False) # Remove non-date rows (e.g. "
 ped = ped[mask].copy()
 ```
 
-Creating time variables
+### Creating time variables
 
-[Explain the time-related variables you created and why they are useful.]
 ```{python}
 # Keep a list of the original sensor columns
 sensor_cols = ped.columns[2:]
@@ -87,9 +83,7 @@ ped["hour"] = ped["Time"].str.split(":").str[0].astype(int)
 ped["is_weekend"] = ped["day_num"] >= 5
 ```
 
-Reshaping the data
-
-[Explain why you reshaped from wide to long format.]
+### Reshaping the data
 
 ```{python}
 # Reshape the data from wide format to long format
@@ -105,7 +99,7 @@ ped_long = pd.melt(
 # I inspected the dataframe with info() and found no null values, so no row deletion or imputation was required.
 ```
 
-Summary of the cleaned data
+### Summary of the cleaned data
 
 [Write a short summary describing the cleaned dataset.]
 
@@ -178,13 +172,13 @@ def normalize_sensor_hour_matrix(matrix):
     return normalized_matrix
 ```
 
-Part C: API Integration
+## Adding weather to the story
 
-[Introduce the API you used and explain why it adds something useful to the project.]
+Pedestrian counts tell you how many people passed a sensor, but not what might have influenced that movement. To add some context, I brought in daily weather data for Auckland CBD using the Open-Meteo Archive API.
 
-Requesting weather data
+I focused mainly on rainfall, then matched each day’s weather records to the corresponding pedestrian counts. For the main weather comparison, I grouped days into two simple categories: wet and dry.
 
-[Explain what variables you requested and why.]
+This was not meant to build a full causal model of walking behaviour. It was a way to ask a practical question: does rain change the weekday-weekend pattern, or is the weekly rhythm stronger than the weather effect?
 
 ```{python}
 # Set up the Open-Meteo API client with caching and retry
@@ -205,13 +199,7 @@ params = {
 	"timezone": "Pacific/Auckland",
 }
 responses = openmeteo.weather_api(url, params = params)
-```
 
-Processing the API response
-
-[Explain how you turned the response into a usable DataFrame.]
-
-```{python}
 # Use the first API response
 response = responses[0]
 
@@ -239,10 +227,9 @@ weather_df = pd.DataFrame(data = daily_data)
 
 # Remove timezone information so Date matches the pedestrian data
 weather_df["Date"] = pd.to_datetime(weather_df["Date"]).dt.tz_localize(None).dt.normalize()
-
 ```
 
-Merging the API data with pedestrian counts
+### Merging the API data with pedestrian counts
 
 [Explain how you merged weather with the pedestrian data and what new comparisons this allowed.]
 
@@ -383,13 +370,11 @@ cluster_profiles = cluster_matrix.groupby("cluster").mean(numeric_only=True)
 
 [Write a short interpretation of what the clusters suggest.]
 
-## Part D: Visualisations
+## What the data shows
 
-[Introduce the visualisations section and explain that each figure reveals a different pattern.]
+The first thing that stood out is how strongly Auckland CBD still behaves like a workweek city.
 
-### Figure 1: Weekday vs weekend hourly pattern
-
-[Briefly introduce the first figure.]
+Figure 1. Mean hourly pedestrian counts across Auckland CBD. Weekday activity stays above weekend activity for most of the day, especially during typical working hours.
 
 ```{python}
 # Plot weekday and weekend hourly line chart
@@ -411,11 +396,17 @@ ax.tick_params(axis="both", labelsize=14)
 ax.legend(fontsize=16)
 ```
 
-[Write 2–4 sentences interpreting the figure.]
+Across most hours of the day, weekday foot traffic is higher than weekend foot traffic. The difference is especially clear through the middle of the day and into the late afternoon, which suggests that much of the CBD’s movement is still shaped by workday routines: commuting, office activity, lunch-hour trips, and after-work movement.
 
-### Figure 2: Weather effect on foot traffic
+But the difference is not just about volume. It is also about rhythm. Weekday activity rises more sharply in the morning and stays stronger through the daytime. Weekend movement is flatter and less structured. In other words, the CBD does not simply get quieter on weekends — it moves to a different schedule.
 
-[Briefly introduce the second figure.]
+This shift suggests that the city centre is not just busier during the week, but functionally different across the week.
+
+### Rain changes the picture, but not evenly
+
+The weather comparison added another layer to that story.
+
+Figure 2. Average pedestrian counts grouped by day type and rainfall condition. Wet weekdays show a clearer drop than wet weekends.
 
 ```{python}
 # Prepare labels for the wet/dry bar chart
@@ -457,11 +448,17 @@ ax.tick_params(axis="both", labelsize=14)
 ax.set_ylim(0, 350)
 ```
 
-[Write 2–4 sentences interpreting the figure.]
+When I compared wet and dry days, weekday pedestrian counts were lower on wet days than on dry days. The same pattern existed on weekends too, but the drop was much smaller.
 
-### Figure 3: Sensor differences across the CBD
+That suggests weekday walking may be more sensitive to rainfall than weekend walking. One possible explanation is that weekday foot traffic is more closely tied to regular routines. If a rainy day disrupts commuting, office movement, or casual lunchtime walking, that effect can show up strongly in the counts. Weekend movement, while lower overall, may already be less structured, so the relative impact of rain looks smaller.
 
-[Briefly introduce the third figure.]
+This does not mean weather matters more than the weekly pattern. The weekday-weekend contrast is still the clearest signal in the data. But rain does appear to nudge weekday activity downward more noticeably.
+
+### Not every part of the CBD behaves the same way
+
+The city-wide pattern is clear, but Auckland CBD is not one uniform walking environment. Some sensors are much more weekday-heavy than others. A smaller number hold up better on weekends, even when overall weekend activity is still lower. That means the weekly shift is not evenly spread across the city centre.
+
+Figure 3. The largest weekday–weekend differences across Auckland CBD sensors. Negative values indicate sensors that are busier on weekdays than weekends.
 
 ```{python}
 # Sort sensors by weekday/weekend difference
@@ -513,7 +510,7 @@ ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
 ```
 
-[Write 2–4 sentences interpreting the figure.]
+A ranked comparison of sensors shows this clearly. Some locations are strongly tied to weekday movement, while others show much smaller differences between weekdays and weekends. That makes sense intuitively: not every part of the CBD serves the same purpose, and not every street depends equally on workday routines.
 
 ### Full sensor difference chart
 ```{python}
@@ -556,13 +553,17 @@ legend_handles = [
 ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
 ```
-### Figure 4: Geospatial visualisation
+### Geospatial visualisation
+
+Figure 4. Interactive sensor map showing whether locations are relatively more weekday-heavy or weekend-heavy. Most sensors are weekday-dominant, but the pattern is not evenly distributed across space.
 
 [Explain what the map shows and why it is useful.]
 
 [If you are using a screenshot in the QMD/PDF, insert it here.]
 
 [If you want to keep the interactive map creation code in the QMD, put it below.]
+
+Instead of treating the CBD as one block, the map shows it as a set of places with different weekly rhythms. Some sensors remain strongly weekday-oriented, while others retain relatively stronger weekend activity. That reinforces a simple but important point: Auckland CBD is not one single pedestrian landscape. It is a mix of places used differently across the week.
 
 ```{python}
 # Load the sensor coordinate file
@@ -615,11 +616,12 @@ m = gdf.explore(
 m.save("sensor_map.html")
 ```
 
-[Write 2–4 sentences interpreting the map.]
 
-### Optional Figure 5: Cluster profiles
+### Different weekday rhythms inside the CBD
 
-[Introduce the cluster profile chart.]
+To push the analysis a little further, I clustered sensors by their normalized weekday hourly profiles using KMeans. That means I did not group sensors by how large their counts were. I grouped them by the shape of their daily weekday pattern.
+
+Figure 5. Average normalized weekday hourly profiles by sensor cluster. The clusters suggest that different parts of the CBD follow different weekday rhythms.
 
 ```{python}
 # Plot the cluster profiles
@@ -648,11 +650,17 @@ ax.legend(fontsize=12)
 # Cluster 2 shows a broader pattern into the evening
 ```
 
-[Write a short interpretation.]
+The clustering suggests that even weekdays do not follow one single CBD pattern. Cluster 1 looks the most commuter-like, with the clearest rush-hour pattern. Cluster 0 is more midday-focused, while Cluster 2 has a broader spread across the day and evening. These labels are only interpretations of the shapes in the data, not exact land-use categories, but they still show that weekday movement in the CBD is not uniform.
 
-### Optional Figure 6: Cluster map
+The map makes this pattern easier to understand. Instead of only showing that different weekday rhythms exist, it shows where those rhythms appear across the CBD.
 
-[Introduce the cluster map if you decide to keep it.]
+### Cluster map
+
+Figure 6. Sensor clusters mapped across Auckland CBD. The spatial pattern suggests that even weekday movement is made up of several different local rhythms.
+
+[insert map]
+
+Together, the cluster profile chart and the map suggest that the weekday city is not one single pedestrian system. Even within the workweek, different parts of Auckland CBD move to slightly different rhythms.
 
 ```{python}
 # Join cluster labels onto the map GeoDataFrame
@@ -707,40 +715,47 @@ plt.tight_layout()
 plt.show()
 ```
 
-## Key Findings
+## What this does not tell us
 
-[Summarise the main findings in plain language.]
+A few caveats matter here.
 
-[You can structure this as a few short paragraphs or a concise list in prose.]
+First, the weather data was daily rather than hourly, so a “wet” day could still include dry periods when people were walking normally. Hourly weather data would sharpen that comparison considerably.
 
-## Limitations
+Second, the sensors count people at fixed locations, not whole journeys. They show where people passed, but not where they came from, where they were going, or why they were there.
 
-[Write about the main limitations of the project.]
+Third, the map shows point locations rather than true pedestrian catchment areas. It is useful for showing spatial patterns, but it should not be read as a full model of how walking is distributed across the entire CBD.
 
-[Possible ideas:
-	•	one year of data only
-	•	weather measured at one city-level location
-	•	sensor points do not represent true catchment areas
-	•	clustering is exploratory
-	•	interactive maps simplified to screenshots in the PDF/blog
-]
+Finally, the clustering is exploratory. It is a helpful way to identify similar weekday movement shapes, but the labels I give those clusters are interpretive, not definitive.
 
-## Conclusion
 
-[Write a short concluding paragraph that directly answers your research question.]
+## So what?
+
+Even with those limitations, the pattern is still meaningful.
+
+Auckland CBD does not simply become quieter on weekends. Its rhythm changes. Weekday movement is stronger and more tied to regular routines, while weekend activity is lower and less evenly spread across the city. Some locations remain relatively active, while others rely much more heavily on weekday traffic.
+
+That matters because it shows the CBD is not one uniform space. It is a mix of places used differently across the week. For retailers, transport operators, and city planners, that distinction matters. A city centre that depends heavily on weekday routines behaves differently from one with more evenly distributed weekly activity.
+
+In that sense, Auckland CBD really does behave like two cities in one.
 
 ## Reproducibility
 
-[State where the reader can find the project files.]
+All code, data, and outputs for this project are available in the public GitHub repository below.
 
-GitHub repository: [Paste your link here]
+GitHub repository:
+https://github.com/Zhengyi-Yan/GISCI343_Assignment_1￼
 
-[Explain what is included in the repository:
-	•	QMD file
-	•	data files
-	•	environment information
-	•	interactive HTML maps
-]
+The repository includes:
+	•	the Quarto document used to generate this report,
+	•	the cleaned workflow in Python,
+	•	the data files,
+	•	and the interactive map outputs used in the analysis.
+
+Code walkthrough
+
+Below is a short video walking through the Python workflow behind this analysis, including the data cleaning steps, custom functions, API integration, and figure generation.
+
+[EMBED VIDEO HERE]
 
 ## Data Sources / References
 
