@@ -99,19 +99,25 @@ ped_long = pd.melt(
 
 ### Summary of the cleaned data
 
-[Write a short summary describing the cleaned dataset.]
+The cleaned dataset contains hourly pedestrian observations from 21 sensors across Auckland CBD for the 2024 calendar year. After removing note rows and correcting one inconsistent sensor name, the data was reshaped into long format so each row represented one sensor reading at one time. No missing values remained in the cleaned pedestrian dataset, and the sensor coordinates were later mapped in WGS84 (EPSG:4326).
 
 ```{python}
-# Optional: head, shape, summary statistics
+print("Cleaned data shape:", ped_long.shape)
+print("Number of sensors:", ped_long["location"].nunique())
+print("Date range:", ped_long["Date"].min().date(), "to", ped_long["Date"].max().date())
+print("Missing values in count column:", ped_long["count"].isna().sum())
+
+ped_long.head()
 ```
 
 ## Functions
 
-Before analysing the pedestrian dataset, I have created 3 helper functions to simplify the 
+Before analysing the pedestrian dataset, I created three helper functions to make the workflow more reusable and easier to follow. One function calculates weekday and weekend averages for a given sensor, while the other two normalize hourly sensor profiles for the clustering step.
 
 ### Function 1
 
-[Briefly explain what the function does and why it is useful.]
+This first function returns the mean weekday and weekend pedestrian counts for a single sensor. It is useful for comparing how individual locations behave across the week.
+
 ```{python}
 def get_mean_weekday_weekend_count(df, sensor):
     """Return the mean weekday and weekend pedestrian counts for one sensor.
@@ -136,7 +142,8 @@ def get_mean_weekday_weekend_count(df, sensor):
 
 ### Function 2
 
-[Briefly explain what the function does and why it is useful.]
+This function normalizes a row of hourly values so that the total adds up to 1. It is used to focus on the shape of activity across the day rather than raw pedestrian volume.
+
 ```{python}
 def normalize(data):
     """Normalize a sequence of values so they add up to 1.
@@ -155,7 +162,8 @@ def normalize(data):
 
 ### Function 3
 
-[Briefly explain what the function does and why it is useful.]
+This final function applies the normalization step to every sensor profile in the hourly matrix. It prepares the data for clustering by making each row comparable.
+
 ```{python}
 def normalize_sensor_hour_matrix(matrix):
     """Normalize each sensor's hourly profile row by row.
