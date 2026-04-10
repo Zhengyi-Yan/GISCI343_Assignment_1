@@ -1,9 +1,9 @@
 ---
-title: "Your Title Here"
-author: "Your Name"
+title: "Two Cities in One: How Auckland CBD Changes Between Weekdays and Weekends"
+author: "Zhengyi Yan"
 format:
   html:
-    toc: true
+    toc: false
     code-fold: false
     embed-resources: true
   pdf:
@@ -17,15 +17,13 @@ execute:
 jupyter: python3
 ---
 
-# Two Cities in One: How Auckland CBD Changes Between Weekdays and Weekends
-
 Auckland CBD does not feel like the same place every day of the week. On a weekday, the city centre is shaped by office workers, lunch breaks, commuting, and quick errands between appointments. On a weekend, some of that movement fades, and a different city appears: less tied to work, less uniform across space, and a little less predictable.
 
 I wanted to see how different those two versions of the CBD really are.
 
 Using pedestrian sensor data from across central Auckland, I explored one main question: 
 
-#### How does pedestrian activity differ between weekdays and weekends across Auckland CBD, and how do those differences vary by hour, weather, and location?
+### How does pedestrian activity differ between weekdays and weekends across Auckland CBD, and how do those differences vary by hour, weather, and location?
 
 To answer it, I combined hourly footfall data from Auckland CBD sensors with daily weather data from the Open-Meteo API, then used charts and maps to compare the city’s weekly rhythm.
 
@@ -107,9 +105,9 @@ ped_long = pd.melt(
 # Optional: head, shape, summary statistics
 ```
 
-## Part B: Functions
+## Functions
 
-[Introduce this section by explaining that you wrote reusable functions to support the analysis.]
+Before analysing the pedestrian dataset, I have created 3 helper functions to simplify the 
 
 ### Function 1
 
@@ -231,20 +229,17 @@ weather_df["Date"] = pd.to_datetime(weather_df["Date"]).dt.tz_localize(None).dt.
 
 ### Merging the API data with pedestrian counts
 
-[Explain how you merged weather with the pedestrian data and what new comparisons this allowed.]
-
 ```{python}
 # Merge the weather data into the pedestrian data
 df = ped_long.merge(weather_df, on="Date", how="left")
 ```
 
-### Analysis
 
-[Use this section to move from prepared data to actual findings.]
 
-#### Overall weekday and weekend comparison
 
-[Write a short paragraph introducing this comparison.]
+## What the data shows
+
+The first thing I wanted to check was whether Auckland CBD is generally busier on weekdays or weekends. To do that, I first split the data into weekday and weekend observations, then compared both the overall average counts and the hourly patterns across the day.
 
 ```{python}
 # Split the data into weekdays and weekends
@@ -253,130 +248,19 @@ weekday_mean = weekdays["count"].mean()
 
 weekends = df[df["is_weekend"]]
 weekend_mean = weekends["count"].mean()
-```
 
-[Write a short interpretation.]
-
-#### Hourly weekday and weekend comparison
-
-[Introduce the hourly comparison and explain why hourly rhythm matters.]
-
-```{python}
 # Calculate mean hourly counts for weekdays and weekends
 weekday_hourly = weekdays.groupby("hour")["count"].mean()
 weekend_hourly = weekends.groupby("hour")["count"].mean()
 ```
 
-[Write a short interpretation.]
 
-#### Sensor-level comparison
-
-[Explain why comparing sensors matters spatially.]
-```{python}
-# List of all sensor names
-sensors = [
-    "107 Quay Street",
-    "Te Ara Tahuhu Walkway",
-    "Commerce Street West",
-    "7 Custom Street East",
-    "45 Queen Street",
-    "30 Queen Street",
-    "19 Shortland Street",
-    "2 High Street",
-    "1 Courthouse Lane",
-    "61 Federal Street",
-    "59 High Street",
-    "210 Queen Street",
-    "205 Queen Street",
-    "8 Darby Street EW",
-    "8 Darby Street NS",
-    "261 Queen Street",
-    "297 Queen Street",
-    "150 K Road",
-    "183 K Road",
-    "188 Quay Street Lower Albert (EW)",
-    "188 Quay Street Lower Albert (NS)"
-]
-# Store weekday and weekend means for each sensor
-sensors_count_dict = {}
-for sensor in sensors:
-    weekdays_mean, weekends_mean = get_mean_weekday_weekend_count(df, sensor)
-    sensors_count_dict[sensor] = {"weekdays_mean": weekdays_mean, "weekends_mean": weekends_mean}
-
-# Convert the dictionary into a DataFrame
-sensors_df = pd.DataFrame.from_dict(sensors_count_dict, orient="index")
-sensors_df = sensors_df.reset_index()
-sensors_df = sensors_df.rename(columns={"index": "location"})
-
-# Calculate weekend mean minus weekday mean
-# Positive = busier on weekends
-sensors_df["difference"] = sensors_df["weekends_mean"] - sensors_df["weekdays_mean"]
-
-# Sort sensors from most weekend-heavy to most weekday-heavy
-weekend_heavy = sensors_df.sort_values("difference", ascending=False)
-weekday_heavy = sensors_df.sort_values("difference", ascending=True)
-```
-
-[Write a short interpretation.]
-
-#### Weather comparison
-
-[Explain why comparing wet and dry conditions matters.]
+It stood out to me how strongly Auckland CBD still behaves like a workweek city.
 
 ```{python}
-# Create a simple wet/dry condition from rain_sum
-df["condition"] = df["rain_sum"].apply(lambda x: "wet" if x > 0 else "dry")
+#| fig-cap: "Figure 1. Mean hourly pedestrian counts across Auckland CBD. Weekday activity stays above weekend activity for most of the day, especially during typical working hours."
+#| fig-align: center
 
-# Compare counts by weekday/weekend and wet/dry condition
-count_by_weekend_and_condition = df.groupby(["is_weekend", "condition"])["count"].mean()
-```
-
-[Write a short interpretation.]
-
-#### Optional extra analysis: clustering
-
-[Introduce the clustering analysis and explain why you added it.]
-
-```{python}
-# Calculate mean weekday count for each sensor and hour
-mean_count_per_hour = weekdays.groupby(["location", "hour"])["count"].mean()
-
-# Reshape so rows are sensors and columns are hours
-sensor_hour_matrix = mean_count_per_hour.unstack()
-
-# Normalize each sensor profile so clustering focuses on shape, not size
-sensor_hour_normalized = normalize_sensor_hour_matrix(sensor_hour_matrix)
-
-# Group sensors into 3 clusters
-kmeans = KMeans(n_clusters=3, random_state=42)
-cluster_labels = kmeans.fit_predict(sensor_hour_normalized)
-
-# Save the cluster label for each sensor
-cluster_df = pd.DataFrame({
-    "location": sensor_hour_normalized.index,
-    "cluster": cluster_labels
-})
-
-# Add cluster labels back onto the normalized matrix
-cluster_matrix = sensor_hour_normalized.copy()
-cluster_matrix = cluster_matrix.reset_index()
-cluster_matrix = cluster_matrix.rename(columns={"index": "location"})
-
-cluster_matrix = cluster_matrix.merge(cluster_df, on="location", how="left")
-
-# Calculate the average normalized profile for each cluster
-cluster_profiles = cluster_matrix.groupby("cluster").mean(numeric_only=True)
-```
-
-[Write a short interpretation of what the clusters suggest.]
-
-## What the data shows
-
-The first thing that stood out is how strongly Auckland CBD still behaves like a workweek city.
-
-Figure 1. Mean hourly pedestrian counts across Auckland CBD. Weekday activity stays above weekend activity for most of the day, especially during typical working hours.
-
-```{python}
 # Plot weekday and weekend hourly line chart
 fig, ax = plt.subplots(figsize=(12, 8))
 ax.set_xticks(range(0, 24, 2))
@@ -404,11 +288,20 @@ This shift suggests that the city centre is not just busier during the week, but
 
 ### Rain changes the picture, but not evenly
 
-The weather comparison added another layer to that story.
-
-Figure 2. Average pedestrian counts grouped by day type and rainfall condition. Wet weekdays show a clearer drop than wet weekends.
+The weekly rhythm is the strongest pattern in the data, but I also wanted to see whether rain changes that picture. To test this, I grouped each day into a simple wet or dry category using daily rainfall totals.
 
 ```{python}
+# Create a simple wet/dry condition from rain_sum
+df["condition"] = df["rain_sum"].apply(lambda x: "wet" if x > 0 else "dry")
+
+# Compare counts by weekday/weekend and wet/dry condition
+count_by_weekend_and_condition = df.groupby(["is_weekend", "condition"])["count"].mean()
+```
+
+```{python}
+#| fig-cap: "Figure 2. Average pedestrian counts grouped by day type and rainfall condition. Wet weekdays show a clearer drop than wet weekends."
+#| fig-align: center
+
 # Prepare labels for the wet/dry bar chart
 categories = ["Dry Weekday", "Wet Weekday", "Dry Weekend", "Wet Weekend"]
 
@@ -456,11 +349,57 @@ This does not mean weather matters more than the weekly pattern. The weekday-wee
 
 ### Not every part of the CBD behaves the same way
 
-The city-wide pattern is clear, but Auckland CBD is not one uniform walking environment. Some sensors are much more weekday-heavy than others. A smaller number hold up better on weekends, even when overall weekend activity is still lower. That means the weekly shift is not evenly spread across the city centre.
-
-Figure 3. The largest weekday–weekend differences across Auckland CBD sensors. Negative values indicate sensors that are busier on weekdays than weekends.
+The city-wide pattern is clear, but Auckland CBD is not one uniform walking environment. To see how the weekday-weekend difference varies across space, I calculated separate weekday and weekend averages for each sensor location.
 
 ```{python}
+# List of all sensor names
+sensors = [
+    "107 Quay Street",
+    "Te Ara Tahuhu Walkway",
+    "Commerce Street West",
+    "7 Custom Street East",
+    "45 Queen Street",
+    "30 Queen Street",
+    "19 Shortland Street",
+    "2 High Street",
+    "1 Courthouse Lane",
+    "61 Federal Street",
+    "59 High Street",
+    "210 Queen Street",
+    "205 Queen Street",
+    "8 Darby Street EW",
+    "8 Darby Street NS",
+    "261 Queen Street",
+    "297 Queen Street",
+    "150 K Road",
+    "183 K Road",
+    "188 Quay Street Lower Albert (EW)",
+    "188 Quay Street Lower Albert (NS)"
+]
+# Store weekday and weekend means for each sensor
+sensors_count_dict = {}
+for sensor in sensors:
+    weekdays_mean, weekends_mean = get_mean_weekday_weekend_count(df, sensor)
+    sensors_count_dict[sensor] = {"weekdays_mean": weekdays_mean, "weekends_mean": weekends_mean}
+
+# Convert the dictionary into a DataFrame
+sensors_df = pd.DataFrame.from_dict(sensors_count_dict, orient="index")
+sensors_df = sensors_df.reset_index()
+sensors_df = sensors_df.rename(columns={"index": "location"})
+
+# Calculate weekend mean minus weekday mean
+# Positive = busier on weekends
+sensors_df["difference"] = sensors_df["weekends_mean"] - sensors_df["weekdays_mean"]
+
+# Sort sensors from most weekend-heavy to most weekday-heavy
+weekend_heavy = sensors_df.sort_values("difference", ascending=False)
+weekday_heavy = sensors_df.sort_values("difference", ascending=True)
+```
+
+```{python}
+#| fig-cap: "Figure 3. The largest weekday–weekend differences across Auckland CBD sensors. Negative values indicate sensors that are busier on weekdays than weekends."
+#| fig-align: center
+
 # Sort sensors by weekday/weekend difference
 sorted_sensors = sensors_df.sort_values(by="difference")
 
@@ -510,58 +449,11 @@ ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
 ```
 
-A ranked comparison of sensors shows this clearly. Some locations are strongly tied to weekday movement, while others show much smaller differences between weekdays and weekends. That makes sense intuitively: not every part of the CBD serves the same purpose, and not every street depends equally on workday routines.
+This comparison shows that the weekday-weekend shift is not evenly spread across the CBD. Some sensors are strongly weekday-heavy, while others show much smaller differences. That suggests different parts of the city centre depend on different kinds of movement, and not every location is equally tied to weekday routines.
 
-### Full sensor difference chart
-```{python}
-# Prepare the full sensor chart
-locations = sorted_sensors["location"]
-differences = sorted_sensors["difference"]
-colors = ["seagreen" if x < 0 else "crimson" for x in differences]
-
-# Plot the full sensor difference chart
-fig, ax = plt.subplots(figsize=(12, 9))
-
-bars = ax.barh(locations, differences, color=colors, alpha=0.8, edgecolor="black")
-
-# Add a zero line
-ax.axvline(0, color="black", linewidth=1)
-
-# Add value labels beside the bars
-for bar in bars:
-    width = bar.get_width()
-    y = bar.get_y() + bar.get_height() / 2
-
-    if width < 0:
-        ax.text(width - 3, y, f"{width:.0f}", ha="right", va="center", fontsize=11)
-    else:
-        ax.text(width + 3, y, f"{width:.0f}", ha="left", va="center", fontsize=11)
-
-# Add labels and title
-ax.set_xlabel("Weekend Mean - Weekday Mean", fontsize=14)
-ax.set_ylabel("Sensor Location", fontsize=14)
-ax.set_title("Difference in Average Weekend and Weekday Pedestrian Count by Sensor (Full)", fontsize=16)
-ax.tick_params(axis="both", labelsize=11)
-ax.grid(axis="x", alpha=0.3)
-
-# Add the legend again
-legend_handles = [
-    Patch(facecolor="seagreen", edgecolor="black", label="Higher on weekdays"),
-    Patch(facecolor="crimson", edgecolor="black", label="Higher on weekends")
-]
-
-ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
-ax.set_xlim(-190, 30)
-```
 ### Geospatial visualisation
 
-Figure 4. Interactive sensor map showing whether locations are relatively more weekday-heavy or weekend-heavy. Most sensors are weekday-dominant, but the pattern is not evenly distributed across space.
-
-[Explain what the map shows and why it is useful.]
-
-[If you are using a screenshot in the QMD/PDF, insert it here.]
-
-[If you want to keep the interactive map creation code in the QMD, put it below.]
+![Figure 4. Pedestrian activity pattern across Auckland CBD sensors. Green markers indicate relatively stronger weekday activity, while red markers indicate relatively stronger weekend activity.](/figures/weekday_weekend_map.png)
 
 Instead of treating the CBD as one block, the map shows it as a set of places with different weekly rhythms. Some sensors remain strongly weekday-oriented, while others retain relatively stronger weekend activity. That reinforces a simple but important point: Auckland CBD is not one single pedestrian landscape. It is a mix of places used differently across the week.
 
@@ -619,11 +511,44 @@ m.save("sensor_map.html")
 
 ### Different weekday rhythms inside the CBD
 
-To push the analysis a little further, I clustered sensors by their normalized weekday hourly profiles using KMeans. That means I did not group sensors by how large their counts were. I grouped them by the shape of their daily weekday pattern.
+To push the analysis a little further, I looked only at weekdays and grouped sensors by the shape of their hourly pattern using KMeans. Instead of clustering sensors by how large their counts were, I normalized each sensor’s weekday profile so the clustering focused on rhythm rather than total volume.
 
-Figure 5. Average normalized weekday hourly profiles by sensor cluster. The clusters suggest that different parts of the CBD follow different weekday rhythms.
 
 ```{python}
+# Calculate mean weekday count for each sensor and hour
+mean_count_per_hour = weekdays.groupby(["location", "hour"])["count"].mean()
+
+# Reshape so rows are sensors and columns are hours
+sensor_hour_matrix = mean_count_per_hour.unstack()
+
+# Normalize each sensor profile so clustering focuses on shape, not size
+sensor_hour_normalized = normalize_sensor_hour_matrix(sensor_hour_matrix)
+
+# Group sensors into 3 clusters
+kmeans = KMeans(n_clusters=3, random_state=42)
+cluster_labels = kmeans.fit_predict(sensor_hour_normalized)
+
+# Save the cluster label for each sensor
+cluster_df = pd.DataFrame({
+    "location": sensor_hour_normalized.index,
+    "cluster": cluster_labels
+})
+
+# Add cluster labels back onto the normalized matrix
+cluster_matrix = sensor_hour_normalized.copy()
+cluster_matrix = cluster_matrix.reset_index()
+cluster_matrix = cluster_matrix.rename(columns={"index": "location"})
+
+cluster_matrix = cluster_matrix.merge(cluster_df, on="location", how="left")
+
+# Calculate the average normalized profile for each cluster
+cluster_profiles = cluster_matrix.groupby("cluster").mean(numeric_only=True)
+```
+
+```{python}
+#| fig-cap: "Figure 5. Average normalized weekday hourly profiles by sensor cluster. The clusters suggest that different parts of the CBD follow different weekday rhythms."
+#| fig-align: center
+
 # Plot the cluster profiles
 fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -656,9 +581,7 @@ The map makes this pattern easier to understand. Instead of only showing that di
 
 ### Cluster map
 
-Figure 6. Sensor clusters mapped across Auckland CBD. The spatial pattern suggests that even weekday movement is made up of several different local rhythms.
-
-[insert map]
+![Figure 6. Sensor clusters across Auckland CBD based on normalized weekday hourly profiles.](figures/sensor_cluster_map.png)
 
 Together, the cluster profile chart and the map suggest that the weekday city is not one single pedestrian system. Even within the workweek, different parts of Auckland CBD move to slightly different rhythms.
 
