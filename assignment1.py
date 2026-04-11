@@ -232,6 +232,8 @@ ax.grid(axis='y', alpha=0.3)
 ax.tick_params(axis="both", labelsize=14)
 ax.set_ylim(0, 350)
 
+
+
 # Sort sensors by weekday/weekend difference
 sorted_sensors = sensors_df.sort_values(by="difference")
 
@@ -280,6 +282,8 @@ legend_handles = [
 ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
 
+
+
 # Prepare the full sensor chart
 locations = sorted_sensors["location"]
 differences = sorted_sensors["difference"]
@@ -318,6 +322,8 @@ legend_handles = [
 
 ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
+
+
 
 # Load the sensor coordinate file
 ped_geodata = pd.read_csv('data/akl_ped-Geodata.csv')
