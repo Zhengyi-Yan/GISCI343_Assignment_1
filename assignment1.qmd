@@ -1,11 +1,12 @@
 ---
 title: "Two Cities in One: How Auckland CBD Changes Between Weekdays and Weekends"
-author: "Zhengyi Yan"
+author: "Zhengyi Yan GISCI 343"
 format:
   html:
     toc: false
     code-fold: false
     embed-resources: true
+    format-links: false
   pdf:
     toc: false
     number-sections: false
@@ -58,7 +59,8 @@ That restructuring mattered. It made it much easier to compare movement patterns
 ped.rename(columns={"59 High Stret": "59 High Street"}, inplace=True)
 
 # Remove note rows such as "Daylight Savings"
-mask = ped['Date'].str.match(r'^\d{4}', na=False) # Remove non-date rows (e.g. "Daylight Savings")
+mask = ped['Date'].str.match(r'^\d{4}', na=False)
+# Remove non-date rows (e.g. "Daylight Savings")
 ped = ped[mask].copy()
 ```
 
@@ -94,7 +96,8 @@ ped_long = pd.melt(
 )
 
 # After reshaping the 2024 dataset to long format, 
-# I inspected the dataframe with info() and found no null values, so no row deletion or imputation was required.
+# I inspected the dataframe with info() and found no null values, 
+# so no row deletion or imputation was required.
 ```
 
 ### Summary of the cleaned data
@@ -104,10 +107,12 @@ The cleaned dataset contains hourly pedestrian observations from 21 sensors acro
 ```{python}
 print("Cleaned data shape:", ped_long.shape)
 print("Number of sensors:", ped_long["location"].nunique())
-print("Date range:", ped_long["Date"].min().date(), "to", ped_long["Date"].max().date())
+print(
+    "Date range:", ped_long["Date"].min().date(), "to", ped_long["Date"].max().date()
+    )
 print("Missing values in count column:", ped_long["count"].isna().sum())
 
-ped_long.head()
+ped_long[["Date", "Time", "location", "count"]].head()
 ```
 
 ## Functions
@@ -217,8 +222,12 @@ daily_temperature_2m_mean = daily.Variables(2).ValuesAsNumpy()
 
 # Build a daily date range to match the weather data
 daily_data = {"Date": pd.date_range(
-	start = pd.to_datetime(daily.Time() + response.UtcOffsetSeconds(), unit = "s", utc = True),
-	end =  pd.to_datetime(daily.TimeEnd() + response.UtcOffsetSeconds(), unit = "s", utc = True),
+	start = pd.to_datetime(daily.Time() + response.UtcOffsetSeconds(), 
+        unit = "s", 
+        utc = True),
+	end =  pd.to_datetime(daily.TimeEnd() + response.UtcOffsetSeconds(), 
+        unit = "s", 
+        utc = True),
 	freq = pd.Timedelta(seconds = daily.Interval()),
 	inclusive = "left"
 )}
@@ -232,7 +241,9 @@ daily_data["temperature_2m_mean"] = daily_temperature_2m_mean
 weather_df = pd.DataFrame(data = daily_data)
 
 # Remove timezone information so Date matches the pedestrian data
-weather_df["Date"] = pd.to_datetime(weather_df["Date"]).dt.tz_localize(None).dt.normalize()
+weather_df["Date"] = pd.to_datetime(
+    weather_df["Date"]
+    ).dt.tz_localize(None).dt.normalize()
 ```
 
 ### Merging the API data with pedestrian counts
@@ -266,7 +277,7 @@ weekend_hourly = weekends.groupby("hour")["count"].mean()
 It stood out to me how strongly Auckland CBD still behaves like a workweek city.
 
 ```{python}
-#| fig-cap: "Figure 1. Mean hourly pedestrian counts across Auckland CBD. Weekday activity stays above weekend activity for most of the day, especially during typical working hours."
+#| fig-cap: "Mean hourly pedestrian counts across Auckland CBD. Weekday activity stays above weekend activity for most of the day, especially during typical working hours."
 #| fig-align: center
 
 # Plot weekday and weekend hourly line chart
@@ -275,10 +286,18 @@ ax.set_xticks(range(0, 24, 2))
 ax.grid(True, alpha=0.3)
 
 # Plot weekday hourly pattern
-ax.plot(weekday_hourly.index, weekday_hourly.values, color=mcolors.CSS4_COLORS["seagreen"], marker="o", label="Weekday")
+ax.plot(weekday_hourly.index, 
+    weekday_hourly.values, 
+    color=mcolors.CSS4_COLORS["seagreen"], 
+    marker="o", 
+    label="Weekday")
 
 # Plot weekend hourly pattern
-ax.plot(weekend_hourly.index, weekend_hourly.values, color=mcolors.CSS4_COLORS["crimson"], marker="o", label = "Weekend")
+ax.plot(weekend_hourly.index, 
+    weekend_hourly.values, 
+    color=mcolors.CSS4_COLORS["crimson"], 
+    marker="o", 
+    label = "Weekend")
 
 # Add labels and title
 ax.set_xlabel('Hours', fontsize=16)
@@ -286,6 +305,10 @@ ax.set_ylabel('Mean pedestrian count', fontsize=16)
 ax.set_title('Mean Pedestrian Count by Hour (Auckland CBD)', fontsize=18)
 ax.tick_params(axis="both", labelsize=14)
 ax.legend(fontsize=16)
+
+plt.tight_layout()
+plt.savefig("figures/figure1.png", dpi=300, bbox_inches="tight")
+plt.show()
 ```
 
 Across most hours of the day, weekday foot traffic is higher than weekend foot traffic. The difference is especially clear through the middle of the day and into the late afternoon, which suggests that much of the CBD’s movement is still shaped by workday routines: commuting, office activity, lunch-hour trips, and after-work movement.
@@ -303,11 +326,13 @@ The weekly rhythm is the strongest pattern in the data, but I also wanted to see
 df["condition"] = df["rain_sum"].apply(lambda x: "wet" if x > 0 else "dry")
 
 # Compare counts by weekday/weekend and wet/dry condition
-count_by_weekend_and_condition = df.groupby(["is_weekend", "condition"])["count"].mean()
+count_by_weekend_and_condition = df.groupby(
+    ["is_weekend", "condition"]
+    )["count"].mean()
 ```
 
 ```{python}
-#| fig-cap: "Figure 2. Average pedestrian counts grouped by day type and rainfall condition. Wet weekdays show a clearer drop than wet weekends."
+#| fig-cap: "Average pedestrian counts grouped by day type and rainfall condition. Wet weekdays show a clearer drop than wet weekends."
 #| fig-align: center
 
 # Prepare labels for the wet/dry bar chart
@@ -343,10 +368,17 @@ for bar in bars:
 # Add labels and title
 ax.set_xlabel('Day type', fontsize=16)
 ax.set_ylabel('Pedestrian count', fontsize=16)
-ax.set_title('Average Pedestrian Count by Day Type and Rain Condition', fontsize=18)
+ax.set_title(
+    'Average Pedestrian Count by Day Type and Rain Condition', 
+    fontsize=18
+)
 ax.grid(axis='y', alpha=0.3)
 ax.tick_params(axis="both", labelsize=14)
 ax.set_ylim(0, 350)
+
+plt.tight_layout()
+plt.savefig("figures/figure2.png", dpi=300, bbox_inches="tight")
+plt.show()
 ```
 
 When I compared wet and dry days, weekday pedestrian counts were lower on wet days than on dry days. The same pattern existed on weekends too, but the drop was much smaller.
@@ -388,7 +420,10 @@ sensors = [
 sensors_count_dict = {}
 for sensor in sensors:
     weekdays_mean, weekends_mean = get_mean_weekday_weekend_count(df, sensor)
-    sensors_count_dict[sensor] = {"weekdays_mean": weekdays_mean, "weekends_mean": weekends_mean}
+    sensors_count_dict[sensor] = {
+        "weekdays_mean": weekdays_mean,
+        "weekends_mean": weekends_mean
+    }
 
 # Convert the dictionary into a DataFrame
 sensors_df = pd.DataFrame.from_dict(sensors_count_dict, orient="index")
@@ -405,7 +440,7 @@ weekday_heavy = sensors_df.sort_values("difference", ascending=True)
 ```
 
 ```{python}
-#| fig-cap: "Figure 3. The largest weekday–weekend differences across Auckland CBD sensors. Negative values indicate sensors that are busier on weekdays than weekends."
+#| fig-cap: "The largest weekday–weekend differences across Auckland CBD sensors. Negative values indicate sensors that are busier on weekdays than weekends."
 #| fig-align: center
 
 # Sort sensors by weekday/weekend difference
@@ -443,7 +478,10 @@ for bar in bars:
 # Add labels and title
 ax.set_xlabel("Weekend Mean - Weekday Mean", fontsize=14)
 ax.set_ylabel("Sensor Location", fontsize=14)
-ax.set_title("Difference in Average Weekend and Weekday Pedestrian Count by Sensor", fontsize=16)
+ax.set_title(
+    "Difference in Average Weekend and Weekday Pedestrian Count by Sensor", 
+    fontsize=16
+)
 ax.tick_params(axis="both", labelsize=11)
 ax.grid(axis="x", alpha=0.3)
 
@@ -455,13 +493,17 @@ legend_handles = [
 
 ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
+
+plt.tight_layout()
+plt.savefig("figures/figure3.png", dpi=300, bbox_inches="tight")
+plt.show()
 ```
 
 This comparison shows that the weekday-weekend shift is not evenly spread across the CBD. Some sensors are strongly weekday-heavy, while others show much smaller differences. That suggests different parts of the city centre depend on different kinds of movement, and not every location is equally tied to weekday routines.
 
 ### Geospatial visualisation
 
-![Figure 4. Pedestrian activity pattern across Auckland CBD sensors. Green markers indicate relatively stronger weekday activity, while red markers indicate relatively stronger weekend activity.](/figures/weekday_weekend_map.png)
+![Pedestrian activity pattern across Auckland CBD sensors. Green markers indicate relatively stronger weekday activity, while red markers indicate relatively stronger weekend activity.](/figures/weekday_weekend_map.png)
 
 Instead of treating the CBD as one block, the map shows it as a set of places with different weekly rhythms. Some sensors remain strongly weekday-oriented, while others retain relatively stronger weekend activity. That reinforces a simple but important point: Auckland CBD is not one single pedestrian landscape. It is a mix of places used differently across the week.
 
@@ -473,12 +515,19 @@ ped_geodata = pd.read_csv('data/akl_ped-Geodata.csv')
 ped_geodata = ped_geodata.dropna(subset=["Latitude", "Longitude"]).copy()
 
 # Merge the sensor summary data with the coordinates
-sensors_df_geo = sensors_df.merge(ped_geodata, left_on="location", right_on="Address", how="inner")
+sensors_df_geo = sensors_df.merge(
+    ped_geodata, 
+    left_on="location", 
+    right_on="Address", 
+    how="inner"
+)
 
 # Convert the table into a GeoDataFrame
 gdf = gpd.GeoDataFrame(
     sensors_df_geo,
-    geometry=gpd.points_from_xy(sensors_df_geo["Longitude"], sensors_df_geo["Latitude"]),
+    geometry=gpd.points_from_xy(
+        sensors_df_geo["Longitude"], sensors_df_geo["Latitude"]
+),
     crs="EPSG:4326"
 )
 
@@ -554,7 +603,7 @@ cluster_profiles = cluster_matrix.groupby("cluster").mean(numeric_only=True)
 ```
 
 ```{python}
-#| fig-cap: "Figure 5. Average normalized weekday hourly profiles by sensor cluster. The clusters suggest that different parts of the CBD follow different weekday rhythms."
+#| fig-cap: "Average normalized weekday hourly profiles by sensor cluster. The clusters suggest that different parts of the CBD follow different weekday rhythms."
 #| fig-align: center
 
 # Plot the cluster profiles
@@ -577,10 +626,9 @@ ax.tick_params(axis="both", labelsize=12)
 ax.grid(True, alpha=0.3)
 ax.legend(fontsize=12)
 
-# These comments are for interpretation later
-# Cluster 1 appears most commuter-oriented
-# Cluster 0 appears more midday-focused
-# Cluster 2 shows a broader pattern into the evening
+plt.tight_layout()
+plt.savefig("figures/figure4.png", dpi=300, bbox_inches="tight")
+plt.show()
 ```
 
 The clustering suggests that even weekdays do not follow one single CBD pattern. Cluster 1 looks the most commuter-like, with the clearest rush-hour pattern. Cluster 0 is more midday-focused, while Cluster 2 has a broader spread across the day and evening. These labels are only interpretations of the shapes in the data, not exact land-use categories, but they still show that weekday movement in the CBD is not uniform.
@@ -589,7 +637,7 @@ The map makes this pattern easier to understand. Instead of only showing that di
 
 ### Cluster map
 
-![Figure 6. Sensor clusters across Auckland CBD based on normalized weekday hourly profiles.](figures/sensor_cluster_map.png)
+![Sensor clusters across Auckland CBD based on normalized weekday hourly profiles.](figures/sensor_cluster_map.png)
 
 Together, the cluster profile chart and the map suggest that the weekday city is not one single pedestrian system. Even within the workweek, different parts of Auckland CBD move to slightly different rhythms.
 
@@ -641,10 +689,6 @@ cluster_map = gdf_cluster.explore(
 # Save the cluster map as an HTML file
 cluster_map.save("sensor_cluster_map.html")
 ```
-```{python}
-plt.tight_layout()
-plt.show()
-```
 
 ## What this does not tell us
 
@@ -674,24 +718,17 @@ In that sense, Auckland CBD really does behave like two cities in one.
 All code, data, and outputs for this project are available in the public GitHub repository below.
 
 GitHub repository:
-https://github.com/Zhengyi-Yan/GISCI343_Assignment_1￼
+https://github.com/Zhengyi-Yan/GISCI343_Assignment_1
 
 The repository includes:
-	•	the Quarto document used to generate this report,
-	•	the cleaned workflow in Python,
-	•	the data files,
-	•	and the interactive map outputs used in the analysis.
 
-Code walkthrough
-
-Below is a short video walking through the Python workflow behind this analysis, including the data cleaning steps, custom functions, API integration, and figure generation.
-
-[EMBED VIDEO HERE]
+- the Quarto document used to generate this report
+- the cleaned workflow in Python
+- the data files
+- the interactive map outputs used in the analysis
 
 ## Data Sources / References
 
-[Heart of the City pedestrian counts]
+Heart of the City pedestrian counts
 
-[Open-Meteo API]
-
-[Any other sources you want to cite]
+Open-Meteo API

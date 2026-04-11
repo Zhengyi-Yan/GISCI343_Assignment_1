@@ -193,6 +193,9 @@ ax.set_ylabel('Mean pedestrian count', fontsize=16)
 ax.set_title('Mean Pedestrian Count by Hour (Auckland CBD)', fontsize=18)
 ax.tick_params(axis="both", labelsize=14)
 ax.legend(fontsize=16)
+plt.tight_layout()
+plt.savefig("figures/figure1.png", dpi=300, bbox_inches="tight")
+plt.show()
 
 # Prepare labels for the wet/dry bar chart
 categories = ["Dry Weekday", "Wet Weekday", "Dry Weekend", "Wet Weekend"]
@@ -231,6 +234,9 @@ ax.set_title('Average Pedestrian Count by Day Type and Rain Condition', fontsize
 ax.grid(axis='y', alpha=0.3)
 ax.tick_params(axis="both", labelsize=14)
 ax.set_ylim(0, 350)
+plt.tight_layout()
+plt.savefig("figures/figure2.png", dpi=300, bbox_inches="tight")
+plt.show()
 
 
 
@@ -281,6 +287,9 @@ legend_handles = [
 
 ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
+plt.tight_layout()
+plt.savefig("figures/figure3.png", dpi=300, bbox_inches="tight")
+plt.show()
 
 
 
@@ -322,6 +331,9 @@ legend_handles = [
 
 ax.legend(handles=legend_handles, fontsize=12, loc="lower right")
 ax.set_xlim(-190, 30)
+plt.tight_layout()
+plt.savefig("figures/full_sensor_chart.png", dpi=300, bbox_inches="tight")
+plt.show()
 
 
 
@@ -448,6 +460,9 @@ ax.set_title("Average Weekday Hourly Profiles by Sensor Cluster", fontsize=16)
 ax.tick_params(axis="both", labelsize=12)
 ax.grid(True, alpha=0.3)
 ax.legend(fontsize=12)
+plt.tight_layout()
+plt.savefig("figures/figure4.png", dpi=300, bbox_inches="tight")
+plt.show()
 
 # These comments are for interpretation later
 # Cluster 1 appears most commuter-oriented
@@ -500,6 +515,3 @@ cluster_map = gdf_cluster.explore(
 
 # Save the cluster map as an HTML file
 cluster_map.save("sensor_cluster_map.html")
-
-plt.tight_layout()
-plt.show()
