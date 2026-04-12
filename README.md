@@ -26,7 +26,6 @@ quarto render assignment1.qmd
 To render the PDF version specifically:
 ```bash
 quarto render assignment1.qmd --to pdf
-
 ```
 ### 3. Optional: run the Python script
 
